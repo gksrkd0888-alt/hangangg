@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎸 나의 기타 악보장</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e0f;
+  --surface: #1a1a1c;
+  --surface2: #242428;
+  --border: #2e2e33;
+  --accent: #d4a843;
+  --accent2: #e8c876;
+  --text: #f0ede8;
+  --muted: #888;
+  --purple: #9b7fe8;
+  --green: #5cb87a;
+  --red: #e8605c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* Header */
+header{padding:2rem 2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem;position:sticky;top:0;background:var(--bg);z-index:100;backdrop-filter:blur(8px)}
+.logo{font-family:'Black Han Sans',sans-serif;font-size:1.6rem;color:var(--accent);letter-spacing:-1px;line-height:1}
+.logo span{color:var(--text);font-size:1rem;font-family:'Noto Sans KR',sans-serif;font-weight:300;margin-left:.5rem;opacity:.6}
+nav{margin-left:auto;display:flex;gap:4px}
+.nav-btn{padding:7px 18px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:.85rem;transition:all .2s}
+.nav-btn.active,.nav-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border)}
+.nav-btn.active{color:var(--accent);border-color:var(--accent);opacity:1}
+
+/* Layout */
+main{max-width:1100px;margin:0 auto;padding:2rem}
+.section{display:none}.section.active{display:block}
+
+/* Chord Dictionary */
+.sub-tabs{display:flex;gap:6px;margin-bottom:1.5rem}
+.sub-tab{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.82rem;font-family:'Noto Sans KR',sans-serif;transition:all .2s}
+.sub-tab.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.chord-sub{display:none}.chord-sub.active{display:block}
+
+.chord-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem}
+.chord-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;transition:all .2s;text-align:center}
+.chord-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.chord-card.selected{border-color:var(--accent);background:var(--surface2);box-shadow:0 0 0 1px var(--accent)}
+.chord-name-big{font-family:'Space Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--accent);margin-bottom:3px}
+.chord-sub-label{font-size:.72rem;color:var(--muted);margin-bottom:8px}
+
+/* Fretboard SVG */
+svg.fb{display:block;margin:0 auto}
+
+/* Chord Detail */
+.chord-detail{background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:1.5rem;margin-top:1rem;display:none;animation:fadeIn .2s ease}
+.chord-detail.show{display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start}
+.detail-info h3{font-family:'Space Mono',monospace;font-size:1.4rem;color:var(--accent);margin-bottom:.5rem}
+.detail-info p{font-size:.9rem;color:var(--muted);line-height:1.7;max-width:320px;margin-bottom:.75rem}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{padding:3px 10px;border-radius:20px;font-size:.75rem;border:1px solid var(--border);color:var(--muted)}
+.tag.major{border-color:var(--accent);color:var(--accent)}
+.tag.minor{border-color:var(--purple);color:var(--purple)}
+.tag.power{border-color:var(--green);color:var(--green)}
+.tag.barre{border-color:var(--red);color:var(--red)}
+
+/* Songs */
+.songs-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.btn-add{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.88rem;font-family:'Noto Sans KR',sans-serif;transition:all .2s}
+.btn-add:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* Add Form */
+.add-form{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;display:none}
+.add-form.open{display:block;animation:fadeIn .2s ease}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:5px;letter-spacing:.05em}
+.field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Space Mono',monospace;font-size:.88rem;outline:none;transition:border .2s;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{min-height:130px;line-height:1.8}
+.hint{font-size:.75rem;color:var(--muted);margin-top:5px;line-height:1.6}
+.field-full{grid-column:1/-1}
+.form-btns{display:flex;gap:8px;margin-top:1rem}
+.btn-save{padding:9px 22px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.88rem;font-family:'Noto Sans KR',sans-serif}
+.btn-cancel{padding:9px 18px;background:transparent;border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);font-family:'Noto Sans KR',sans-serif;font-size:.88rem}
+
+/* Song List */
+.song-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.song-item:hover{border-color:var(--border)}
+.song-header{display:flex;align-items:center;padding:1rem 1.25rem;cursor:pointer;gap:1rem}
+.song-num{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--muted);min-width:24px}
+.song-title{font-size:1rem;font-weight:500;flex:1}
+.song-artist{font-size:.82rem;color:var(--muted);margin-right:.5rem}
+.song-chord-pills{display:flex;gap:5px;flex-wrap:wrap}
+.cpill{font-family:'Space Mono',monospace;font-size:.7rem;padding:2px 8px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
+.song-actions{display:flex;align-items:center;gap:6px;margin-left:auto}
+.icon-btn{background:transparent;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:4px 8px;border-radius:6px;transition:all .2s}
+.icon-btn:hover{background:var(--surface2);color:var(--text)}
+.icon-btn.del:hover{color:var(--red)}
+.chevron{transition:transform .3s;color:var(--muted);font-size:.9rem}
+.song-item.open .chevron{transform:rotate(180deg)}
+
+.song-body{display:none;padding:0 1.25rem 1.25rem;border-top:1px solid var(--border)}
+.song-item.open .song-body{display:block}
+.song-meta-bar{display:flex;gap:1rem;padding:.75rem 0;font-size:.8rem;color:var(--muted)}
+.lyric-block{font-family:'Space Mono',monospace;font-size:.85rem;line-height:2.4;white-space:pre-wrap;background:var(--surface2);border-radius:8px;padding:1rem 1.25rem;border:1px solid var(--border)}
+.lc{color:var(--accent);font-weight:700}
+
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--muted)}
+.empty-state .big{font-size:3rem;margin-bottom:1rem;opacity:.3}
+.empty-state p{font-size:.9rem;line-height:1.8}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎸 나의 악보장 <span>Guitar Chord Book</span></div>
+  <nav>
+    <button class="nav-btn active" onclick="showSection('chords')">코드 사전</button>
+    <button class="nav-btn" onclick="showSection('songs')">내 악보</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- 코드 사전 -->
+<div id="chords" class="section active">
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="showChordTab('open')">오픈 코드</button>
+    <button class="sub-tab" onclick="showChordTab('barre')">바레 코드</button>
+    <button class="sub-tab" onclick="showChordTab('power')">파워 코드</button>
+  </div>
+  <div id="chord-open" class="chord-sub active"><div class="chord-grid" id="grid-open"></div></div>
+  <div id="chord-barre" class="chord-sub"><div class="chord-grid" id="grid-barre"></div></div>
+  <div id="chord-power" class="chord-sub"><div class="chord-grid" id="grid-power"></div></div>
+  <div class="chord-detail" id="chord-detail">
+    <svg class="fb" id="detail-svg" width="170" height="210"></svg>
+    <div class="detail-info">
+      <h3 id="d-name"></h3>
+      <p id="d-desc"></p>
+      <div class="tags" id="d-tags"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 내 악보 -->
+<div id="songs" class="section">
+  <div class="songs-header">
+    <h2 style="font-family:'Black Han Sans';font-size:1.3rem;color:var(--accent)">내 악보 <span style="font-family:'Noto Sans KR';font-size:.85rem;color:var(--muted);font-weight:300" id="song-count"></span></h2>
+    <button class="btn-add" onclick="toggleForm()">+ 새 악보 추가</button>
+  </div>
+
+  <div class="add-form" id="add-form">
+    <div class="form-grid">
+      <div class="field"><label>곡 제목</label><input id="f-title" placeholder="예: Wonderful Tonight"></div>
+      <div class="field"><label>아티스트</label><input id="f-artist" placeholder="예: Eric Clapton"></div>
+      <div class="field"><label>사용 코드 (쉼표 구분)</label><input id="f-chords" placeholder="예: G, D, Em, C"></div>
+      <div class="field"><label>키 / 박자 (선택)</label><input id="f-key" placeholder="예: G장조 / 4/4박자"></div>
+      <div class="field field-full">
+        <label>가사 + 코드</label>
+        <textarea id="f-lyrics" placeholder="[G]Wonderful tonight, [D]it's late in the [Em]evening...
+
+코드는 [G], [Am], [F#m] 처럼 대괄호로 넣어주세요."></textarea>
+        <p class="hint">💡 코드를 가사 앞에 [코드명] 형식으로 입력하면 색깔로 표시돼요</p>
+      </div>
+    </div>
+    <div class="form-btns">
+      <button class="btn-save" onclick="saveSong()">저장</button>
+      <button class="btn-cancel" onclick="toggleForm()">취소</button>
+    </div>
+  </div>
+
+  <div id="song-list"></div>
+</div>
+
+</main>
+
+<script>
+// ─── 코드 데이터 ───────────────────────────────────────
+const CHORDS = {
+  open: [
+    {name:'C',frets:[null,3,2,0,1,0],barre:null,desc:'가장 기본적인 코드. 3·4·5번 줄을 짚고 나머지는 개방. 밝고 따뜻한 울림.',tags:['Major','초급']},
+    {name:'Am',frets:[0,0,2,2,1,0],barre:null,desc:'A 마이너. 부드럽고 약간 슬픈 느낌. Em과 함께 초보자 필수.',tags:['Minor','초급']},
+    {name:'G',frets:[3,2,0,0,0,3],barre:null,desc:'G 메이저. 개방현이 많아 울림이 풍성. 1·2·6번 줄만 짚으면 돼.',tags:['Major','초급']},
+    {name:'Em',frets:[0,2,2,0,0,0],barre:null,desc:'E 마이너. 단 두 손가락. 가장 쉬운 코드 중 하나.',tags:['Minor','초급']},
+    {name:'D',frets:[null,null,0,2,3,2],barre:null,desc:'D 메이저. 4·5·6번 줄만 연주. 처음엔 손가락 모양이 어색할 수 있어.',tags:['Major','초급']},
+    {name:'E',frets:[0,2,2,1,0,0],barre:null,desc:'E 메이저. Am과 함께 자주 등장. 6번 줄이 낮은 E라 풍성한 저음.',tags:['Major','초급']},
+    {name:'Dm',frets:[null,null,0,2,3,1],barre:null,desc:'D 마이너. 슬프고 진지한 분위기. F 코드와 자주 짝지어 씀.',tags:['Minor','초급']},
+    {name:'A',frets:[0,2,2,2,0,null],barre:null,desc:'A 메이저. 5·4·3번 줄 모두 2프렛. 처음엔 손가락 세 개를 나란히 짚기.',tags:['Major','초급']},
+    {name:'F',frets:[1,1,2,3,3,1],barre:1,desc:'1프렛 바레 코드. 초보자의 첫 번째 관문! 검지로 1프렛 전체를 짚어.',tags:['Major','바레','중급']},
+    {name:'Cadd9',frets:[null,3,2,0,3,0],barre:null,desc:'C에 9음(D)을 추가. 일반 C보다 개방적이고 팝스러운 느낌.',tags:['Add9','중급']},
+  ],
+  barre: [
+    {name:'Bm',frets:[null,2,4,4,3,2],barre:2,desc:'2프렛 바레 마이너. 록 발라드·팝 필수 코드. F 이후 두 번째 관문.',tags:['Minor','바레','중급']},
+    {name:'B7',frets:[null,2,1,2,0,2],barre:null,desc:'도미넌트 7th. 블루스·컨트리 분위기. E 코드로 해결되는 긴장감.',tags:['7th','중급']},
+    {name:'G/B',frets:[null,2,0,0,3,3],barre:null,desc:'G 코드의 B 베이스 보이싱. C → G/B → Am 진행이 매우 자연스러워.',tags:['Slash','중급']},
+    {name:'Fm',frets:[1,1,1,3,3,1],barre:1,desc:'1프렛 풀 바레 마이너. F의 마이너 버전. 어둡고 드라마틱한 울림.',tags:['Minor','바레','고급']},
+  ],
+  power: [
+    {name:'E5',frets:[0,2,2,null,null,null],barre:null,desc:'E 파워코드. 6·5·4번 줄. 오픈 E라 5현 기타처럼 두터운 사운드.',tags:['Power','Rock','초급']},
+    {name:'A5',frets:[null,0,2,2,null,null],barre:null,desc:'A 파워코드. 5·4·3번 줄. 록 리프의 기본 중 기본.',tags:['Power','Rock','초급']},
+    {name:'G5',frets:[3,5,5,null,null,null],barre:null,desc:'G 파워코드. 3프렛 위치. 검지·약지로 짚거나 검지·소지로 짚어.',tags:['Power','Rock','초급']},
+    {name:'D5',frets:[null,null,0,2,3,null],barre:null,desc:'D 파워코드. 4·3·2번 줄. 가볍고 밝은 파워코드.',tags:['Power','Rock','초급']},
+    {name:'C5',frets:[null,null,null,5,5,3],barre:null,desc:'C 파워코드. 8프렛 위치가 일반적이지만 3프렛도 자주 씀.',tags:['Power','Rock','초급']},
+    {name:'B5',frets:[null,2,4,4,null,null],barre:null,desc:'B 파워코드. 2·4프렛. 락 곡에서 파워풀한 브리지에 자주 등장.',tags:['Power','Rock','초급']},
+  ]
+};
+
+const STR_X=[126,104,82,60,38,16];
+const NOTE_COLOR='#d4a843';
+const STRING_COLOR='#444';
+const FRET_COLOR='#333';
+const TEXT_COLOR='#888';
+
+function drawFretboard(svgEl, frets, barre){
+  const W=150,NUT_Y=28,FR_H=30,NS=6,FRETS=5;
+  const validFrets=frets.filter(f=>f!==null&&f>0);
+  const minFret=validFrets.length?Math.min(...validFrets):0;
+  const startFret=barre?barre-1:(minFret>4?minFret-1:0);
+  svgEl.innerHTML='';
+  svgEl.setAttribute('viewBox',`0 0 ${W} ${NUT_Y+FRETS*FR_H+20}`);
+  const ns='http://www.w3.org/2000/svg';
+  const S=(tag,attrs,parent)=>{const el=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));parent.appendChild(el);return el};
+  // fret position label
+  if(startFret>0){
+    const t=S('text',{x:W-4,y:NUT_Y+FR_H/2+4,'text-anchor':'end','font-size':'10','fill':TEXT_COLOR,'font-family':'Space Mono,monospace'},svgEl);
+    t.textContent=startFret+1+'fr';
+  }
+  // strings
+  for(let i=0;i<NS;i++){
+    S('line',{x1:STR_X[i],y1:NUT_Y,x2:STR_X[i],y2:NUT_Y+FRETS*FR_H,stroke:STRING_COLOR,'stroke-width':'1'},svgEl);
+    // string name
+    const t=S('text',{x:STR_X[i],y:NUT_Y-7,'text-anchor':'middle','font-size':'9','fill':TEXT_COLOR,'font-family':'Space Mono,monospace'},svgEl);
+    t.textContent=['e','B','G','D','A','E'][i];
+  }
+  // frets
+  for(let f=0;f<=FRETS;f++){
+    const y=NUT_Y+f*FR_H;
+    S('line',{x1:STR_X[NS-1],y1:y,x2:STR_X[0],y2:y,stroke:f===0&&startFret===0?'#666':FRET_COLOR,'stroke-width':f===0&&startFret===0?'2.5':'1'},svgEl);
+  }
+  // barre bar
+  if(barre){
+    const by=NUT_Y+(barre-startFret)*FR_H-FR_H/2;
+    S('rect',{x:STR_X[NS-1],y:by-9,width:STR_X[0]-STR_X[NS-1],height:18,rx:9,fill:NOTE_COLOR,opacity:'0.85'},svgEl);
+  }
+  // finger dots & mute/open
+  frets.forEach((f,i)=>{
+    const x=STR_X[i];
+    if(f===null){
+      const t=S('text',{x,y:NUT_Y-7,'text-anchor':'middle','font-size':'13','fill':'#e8605c','font-family':'Arial'},svgEl);
+      t.textContent='×';return;
+    }
+    if(f===0){
+      S('circle',{cx:x,cy:NUT_Y-9,r:5,fill:'none',stroke:NOTE_COLOR,'stroke-width':'1.5'},svgEl);return;
+    }
+    const adjF=f-startFret;
+    if(barre&&f===barre)return;
+    const cy=NUT_Y+adjF*FR_H-FR_H/2;
+    S('circle',{cx:x,cy,r:11,fill:NOTE_COLOR},svgEl);
+    const t=S('text',{x,y:cy+4,'text-anchor':'middle','font-size':'10','fill':'#0e0e0f','font-weight':'700','font-family':'Space Mono,monospace'},svgEl);
+    t.textContent=f;
+  });
+}
+
+// ─── 코드 그리드 렌더 ───────────────────────────────────
+function buildGrid(containerId, list){
+  const cont=document.getElementById(containerId);
+  cont.innerHTML='';
+  list.forEach(ch=>{
+    const card=document.createElement('div');
+    card.className='chord-card';
+    card.innerHTML=`<div class="chord-name-big">${ch.name}</div><div class="chord-sub-label">${ch.tags.join(' · ')}</div>`;
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('class','fb');
+    card.appendChild(svg);
+    drawFretboard(svg,ch.frets,ch.barre);
+    card.onclick=()=>showDetail(ch,card);
+    cont.appendChild(card);
+  });
+}
+buildGrid('grid-open',CHORDS.open);
+buildGrid('grid-barre',CHORDS.barre);
+buildGrid('grid-power',CHORDS.power);
+
+let selCard=null;
+function showDetail(ch,card){
+  if(selCard===card){selCard.classList.remove('selected');selCard=null;document.getElementById('chord-detail').classList.remove('show');return}
+  if(selCard)selCard.classList.remove('selected');
+  selCard=card;card.classList.add('selected');
+  document.getElementById('d-name').textContent=ch.name;
+  document.getElementById('d-desc').textContent=ch.desc;
+  const tags=document.getElementById('d-tags');
+  const tagClass={Major:'major',Minor:'minor',Power:'power','바레':'barre'};
+  tags.innerHTML=ch.tags.map(t=>`<span class="tag ${tagClass[t]||''}">${t}</span>`).join('');
+  drawFretboard(document.getElementById('detail-svg'),ch.frets,ch.barre);
+  document.getElementById('chord-detail').classList.add('show');
+  document.getElementById('chord-detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function showChordTab(tab){
+  document.querySelectorAll('.sub-tab').forEach((b,i)=>b.classList.toggle('active',['open','barre','power'][i]===tab));
+  document.querySelectorAll('.chord-sub').forEach(s=>s.classList.remove('active'));
+  document.getElementById('chord-'+tab).classList.add('active');
+  document.getElementById('chord-detail').classList.remove('show');
+  selCard=null;
+}
+
+// ─── 곡 데이터 ───────────────────────────────────────────
+let songs=JSON.parse(localStorage.getItem('guitar_songs2')||'null')||[
+  {id:1,title:'Wonderful Tonight',artist:'Eric Clapton',chords:['G','D','Em','C'],key:'G장조 / 4/4박자',lyrics:`[G]It's late in the [D]evening,\n[C]she's wondering what clothes to [D]wear.\n[G]She puts on her make-up and\n[D]brushes her long blonde [C]hair.\nAnd then she [D]asks me,\n[G]"Do I look alright?" [D]\nAnd I say [C]"Yes, you look [D]wonderful to[G]night."`}
+];
+function saveSongs(){localStorage.setItem('guitar_songs2',JSON.stringify(songs))}
+
+function renderLyrics(raw){
+  return raw.replace(/\[([^\]]+)\]/g,'<span class="lc">[$1]</span>');
+}
+
+function renderSongs(){
+  const list=document.getElementById('song-list');
+  const count=document.getElementById('song-count');
+  count.textContent=songs.length?`${songs.length}곡`:'';
+  if(!songs.length){list.innerHTML=`<div class="empty-state"><div class="big">🎵</div><p>아직 등록된 악보가 없어요.<br>위 버튼으로 첫 번째 곡을 추가해보세요!</p></div>`;return}
+  list.innerHTML='';
+  songs.forEach((s,idx)=>{
+    const div=document.createElement('div');
+    div.className='song-item';
+    div.id='si-'+s.id;
+    const pills=(s.chords||[]).map(c=>`<span class="cpill">${c}</span>`).join('');
+    div.innerHTML=`
+      <div class="song-header" onclick="toggleSong(${s.id})">
+        <span class="song-num">${String(idx+1).padStart(2,'0')}</span>
+        <div style="flex:1">
+          <div class="song-title">${s.title}</div>
+          <div style="display:flex;gap:.75rem;align-items:center;margin-top:4px">
+            <span class="song-artist">${s.artist}</span>
+            <div class="song-chord-pills">${pills}</div>
+          </div>
+        </div>
+        <div class="song-actions">
+          <button class="icon-btn del" onclick="event.stopPropagation();deleteSong(${s.id})" title="삭제">✕</button>
+          <span class="chevron">▾</span>
+        </div>
+      </div>
+      <div class="song-body">
+        ${s.key?`<div class="song-meta-bar"><span>🎵 ${s.key}</span></div>`:''}
+        <pre class="lyric-block">${renderLyrics(s.lyrics||'')}</pre>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleSong(id){document.getElementById('si-'+id)?.classList.toggle('open')}
+function deleteSong(id){if(!confirm('이 악보를 삭제할까요?'))return;songs=songs.filter(s=>s.id!==id);saveSongs();renderSongs()}
+
+function toggleForm(){
+  const f=document.getElementById('add-form');
+  f.classList.toggle('open');
+  if(f.classList.contains('open'))document.getElementById('f-title').focus();
+}
+
+function saveSong(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){alert('곡 제목을 입력해주세요.');return}
+  const artist=document.getElementById('f-artist').value.trim()||'알 수 없음';
+  const chords=(document.getElementById('f-chords').value||'').split(',').map(c=>c.trim()).filter(Boolean);
+  const key=document.getElementById('f-key').value.trim();
+  const lyrics=document.getElementById('f-lyrics').value.trim();
+  songs.unshift({id:Date.now(),title,artist,chords,key,lyrics});
+  saveSongs();renderSongs();
+  document.getElementById('add-form').classList.remove('open');
+  ['f-title','f-artist','f-chords','f-key','f-lyrics'].forEach(id=>document.getElementById(id).value='');
+}
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['chords','songs'][i]===id));
+}
+
+renderSongs();
+</script>
+</body>
+</html>
