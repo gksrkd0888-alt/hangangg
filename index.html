@@ -112,7 +112,21 @@ main{max-width:1060px;margin:0 auto;padding:1.5rem}
 .emp{text-align:center;padding:3rem 2rem;color:#555}
 .emp .big{font-size:2.5rem;margin-bottom:.75rem;opacity:.3}
 .no-results{text-align:center;padding:2rem;color:#555;font-size:.85rem}
-</style>
+/* artist group */
+.artist-group{margin-bottom:1.5rem}
+.artist-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem;padding:.4rem 0;border-bottom:1px solid var(--bor);cursor:pointer;user-select:none}
+.artist-name{font-size:.9rem;font-weight:500;color:var(--acc);font-family:'Space Mono',monospace}
+.artist-count{font-size:.72rem;color:#555;background:var(--sur2);padding:2px 8px;border-radius:10px}
+.artist-chev{color:#555;font-size:.8rem;transition:transform .3s;margin-left:auto}
+.artist-group.open .artist-chev{transform:rotate(180deg)}
+.artist-songs{display:none}
+.artist-group.open .artist-songs{display:block}
+/* search bar bigger */
+.search-wrap{position:relative;flex:1;max-width:340px}
+.search-wrap input{width:100%;padding:7px 14px 7px 34px;border-radius:20px;border:1px solid var(--bor);background:var(--sur);color:var(--txt);font-size:.82rem;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border .15s}
+.search-wrap input:focus{border-color:var(--acc)}
+.search-wrap .si-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#555;font-size:.85rem;pointer-events:none}
+.search-wrap input::placeholder{color:#555}
 </head>
 <body>
 
@@ -159,7 +173,11 @@ main{max-width:1060px;margin:0 auto;padding:1.5rem}
   <div class="filters">
     <button class="filter-btn active" onclick="setFilter('all',this)">전체</button>
     <button class="filter-btn fav-f" onclick="setFilter('fav',this)">★ 즐겨찾기</button>
-    <input class="search-box" id="search" placeholder="곡명 / 아티스트 검색..." oninput="renderSongs()">
+    <button class="filter-btn" onclick="setFilter('artist',this)">가수별</button>
+    <div class="search-wrap">
+      <span class="si-icon">🔍</span>
+      <input id="search" placeholder="곡명 / 아티스트 검색..." oninput="renderSongs()">
+    </div>
   </div>
 
   <div class="aform" id="af">
@@ -256,7 +274,7 @@ function transposeLine(line, semitones){
 }
 
 // ── Canvas 프렛보드 그리기 ──────────────────────────────
-const DOT_COLORS={1:'#e84040',2:'#c8b800',3:'#3ab854',4:'#4a9de8',5:'#a040e8'};
+const DOT_COLORS={1:'#d4a843',2:'#d4a843',3:'#d4a843',4:'#d4a843',5:'#d4a843'};
 const STR_COLORS=['#d4c08a','#cbb87e','#c2b072','#b9a866','#b0a05a','#a7984e'];
 
 function drawChord(canvas, chord, W, H){
@@ -426,6 +444,7 @@ let songs=JSON.parse(localStorage.getItem('hangangSongs')||'null')||[
   {id:1,title:'Wonderful Tonight',artist:'Eric Clapton',chords:['G','D','Em','C'],key:'G',timeSig:'4/4',bpm:92,fav:false,lyrics:`[G]It's late in the [D]evening,\n[C]she's wondering what clothes to [D]wear.\n[G]She puts on her make-up and\n[D]brushes her long blonde [C]hair.\nAnd then she [D]asks me,\n[G]"Do I look alright?" [D]\nAnd I say, [C]"Yes, you look [D]wonderful to[G]night."`}
 ];
 let transposeState={};
+let openState={};
 let filterMode='all';
 
 function sv(){localStorage.setItem('hangangSongs',JSON.stringify(songs))}
@@ -464,12 +483,49 @@ function renderSongs(){
   if(!songs.length){sl.innerHTML='<div class="emp"><div class="big">🎵</div><p>아직 등록된 악보가 없어요.</p></div>';return}
   if(!list.length){sl.innerHTML='<div class="no-results">검색 결과가 없어요.</div>';return}
 
+  // 가수별 보기
+  if(filterMode==='artist'){
+    const grouped={};
+    list.forEach(s=>{
+      const a=s.artist||'알 수 없음';
+      if(!grouped[a])grouped[a]=[];
+      grouped[a].push(s);
+    });
+    sl.innerHTML='';
+    Object.keys(grouped).sort().forEach(artist=>{
+      const grp=document.createElement('div');
+      grp.className='artist-group open';
+      grp.id='ag-'+encodeURIComponent(artist);
+      const songs_in=grouped[artist];
+      grp.innerHTML=`
+        <div class="artist-header" onclick="togArtist('${encodeURIComponent(artist)}')">
+          <span class="artist-name">${artist}</span>
+          <span class="artist-count">${songs_in.length}곡</span>
+          <span class="artist-chev">▾</span>
+        </div>
+        <div class="artist-songs" id="as-${encodeURIComponent(artist)}"></div>`;
+      sl.appendChild(grp);
+      const container=grp.querySelector('.artist-songs');
+      songs_in.forEach((s,i)=>container.appendChild(buildSongEl(s,i)));
+    });
+    return;
+  }
+
   sl.innerHTML='';
-  list.forEach((s,i)=>{
+  list.forEach((s,i)=>sl.appendChild(buildSongEl(s,i)));
+}
+
+function togArtist(enc){
+  const grp=document.getElementById('ag-'+enc);
+  grp?.classList.toggle('open');
+}
+
+function buildSongEl(s,i){
     const st=transposeState[s.id]||0;
     const div=document.createElement('div');
     div.className='si'+(s.fav?' favorited':'');
     div.id='si'+s.id;
+    div.classList.toggle('open', !!openState[s.id]);
     const pills=(s.chords||[]).map(c=>{
       const tc=transposeNote(c,st);
       return `<span class="sp">${tc}</span>`;
@@ -508,13 +564,13 @@ function renderSongs(){
         </div>
         ${s.lyrics?`<pre class="lb">${renderLyrics(s.lyrics,st)}</pre>`:'<p style="padding:.9rem 1.1rem;color:#555;font-size:.82rem">가사가 없어요.</p>'}
       </div>`;
-    sl.appendChild(div);
-  });
+    return div;
 }
 
 function togS(id){
+  openState[id]=!openState[id];
   const el=document.getElementById('si'+id);
-  el?.classList.toggle('open');
+  el?.classList.toggle('open',openState[id]);
 }
 function togFav(id){
   const s=songs.find(x=>x.id===id);
@@ -530,21 +586,10 @@ function changeTranspose(id,delta){
   transposeState[id]=((transposeState[id]||0)+delta+12)%12;
   if(transposeState[id]>6)transposeState[id]-=12;
   renderSongs();
-  const wasOpen=document.getElementById('si'+id)?.classList.contains('open');
-  if(wasOpen){
-    setTimeout(()=>{
-      const el=document.getElementById('si'+id);
-      if(el&&!el.classList.contains('open'))el.classList.add('open');
-    },10);
-  }
 }
 function resetTranspose(id){
   transposeState[id]=0;
   renderSongs();
-  setTimeout(()=>{
-    const el=document.getElementById('si'+id);
-    if(el&&!el.classList.contains('open'))el.classList.add('open');
-  },10);
 }
 
 function togForm(){
