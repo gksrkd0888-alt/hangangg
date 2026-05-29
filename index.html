@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한강 악보장</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e0e0f;--sur:#1a1a1c;--sur2:#242428;--bor:#2e2e33;--acc:#d4a843;--acc2:#e8c876;--txt:#f0ede8;--mut:#888;--pur:#9b7fe8;--grn:#5cb87a;--red:#e8605c}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:hidden}
+header{padding:1rem 1.5rem;border-bottom:1px solid var(--bor);display:flex;align-items:center;gap:1rem;background:var(--bg);position:sticky;top:0;z-index:100}
+.logo{font-family:'Black Han Sans',sans-serif;font-size:1.4rem;color:var(--acc)}
+.logo small{font-size:.75rem;color:#555;font-weight:400;margin-left:.5rem;font-family:'Noto Sans KR',sans-serif}
+nav{margin-left:auto;display:flex;gap:4px}
+.nb{padding:6px 16px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--mut);cursor:pointer;font-size:.82rem;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.nb.active{color:var(--acc);border-color:var(--acc);background:#1a1800}
+.nb:hover:not(.active){background:var(--sur);color:var(--txt)}
+.sec{display:none}.sec.active{display:block}
+main{max-width:1060px;margin:0 auto;padding:1.5rem}
+
+/* chord dict */
+.stabs{display:flex;gap:6px;margin-bottom:1.25rem}
+.stab{padding:5px 16px;border-radius:20px;border:1px solid var(--bor);background:transparent;color:var(--mut);cursor:pointer;font-size:.8rem;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.stab.active{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700}
+.csub{display:none}.csub.active{display:block}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem}
+.ccard{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:10px;cursor:pointer;transition:all .18s;text-align:center;position:relative}
+.ccard:hover{border-color:var(--acc);transform:translateY(-2px)}
+.cn{font-size:1.1rem;font-weight:700;color:var(--acc);margin-bottom:2px;font-family:'Space Mono',monospace}
+.ct{font-size:.7rem;color:#666;margin-bottom:6px}
+
+/* chord popup */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.popup{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:1.5rem;max-width:340px;width:90%;position:relative;animation:popIn .2s ease}
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.popup-close{position:absolute;top:10px;right:14px;background:transparent;border:none;color:var(--mut);font-size:1.2rem;cursor:pointer}
+.popup h3{font-family:'Space Mono',monospace;font-size:1.3rem;color:var(--acc);margin-bottom:.4rem}
+.popup p{font-size:.85rem;color:var(--mut);line-height:1.7;margin-bottom:.75rem}
+.popup-tags{display:flex;gap:5px;flex-wrap:wrap}
+.ptag{padding:2px 9px;border-radius:12px;font-size:.72rem;border:1px solid var(--bor);color:var(--mut)}
+.ptag.major{border-color:var(--acc);color:var(--acc)}.ptag.minor{border-color:var(--pur);color:var(--pur)}
+.ptag.power{border-color:var(--grn);color:var(--grn)}.ptag.barre{border-color:var(--red);color:var(--red)}
+
+/* songs header */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.sh h2{font-family:'Black Han Sans',sans-serif;font-size:1.2rem;color:var(--acc)}
+.badd{padding:8px 18px;background:var(--acc);color:#000;border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.badd:hover{background:var(--acc2)}
+
+/* genre tabs */
+.genre-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.gtab{padding:5px 16px;border-radius:20px;border:1px solid var(--bor);background:transparent;color:var(--mut);cursor:pointer;font-size:.8rem;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.gtab.active{color:#000;border-color:var(--acc);background:var(--acc);font-weight:700}
+.gtab:hover:not(.active){background:var(--sur);color:var(--txt)}
+.gtab[data-genre="KPop"].active{background:#ff6b9d;border-color:#ff6b9d}
+.gtab[data-genre="JPop"].active{background:#ff4757;border-color:#ff4757}
+.gtab[data-genre="Pop"].active{background:#5352ed;border-color:#5352ed}
+.gtab[data-genre="기타"].active{background:#2ed573;border-color:#2ed573;color:#000}
+
+/* filters */
+.filters{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--bor);background:transparent;color:var(--mut);cursor:pointer;font-size:.75rem;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.filter-btn.active{background:var(--sur2);color:var(--txt);border-color:#555}
+.filter-btn.fav-f.active{border-color:#e8c050;color:#e8c050}
+.search-wrap{position:relative;flex:1;max-width:340px}
+.search-wrap input{width:100%;padding:7px 14px 7px 34px;border-radius:20px;border:1px solid var(--bor);background:var(--sur);color:var(--txt);font-size:.82rem;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border .15s}
+.search-wrap input:focus{border-color:var(--acc)}
+.search-wrap .si-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#555;font-size:.85rem;pointer-events:none}
+.search-wrap input::placeholder{color:#555}
+
+/* add/edit form */
+.aform{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none}
+.aform.open{display:block;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.form-title{font-family:'Black Han Sans',sans-serif;font-size:1rem;color:var(--acc);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.form-title .form-mode-badge{font-size:.72rem;padding:2px 8px;border-radius:10px;background:var(--sur2);color:var(--mut);font-family:'Noto Sans KR',sans-serif;font-weight:400}
+.form-title .form-mode-badge.edit{background:#1a1400;color:var(--acc);border:1px solid var(--acc)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.ff{grid-column:1/-1}
+.fl label{display:block;font-size:.75rem;color:var(--mut);margin-bottom:4px}
+.fl input,.fl textarea,.fl select{width:100%;background:var(--bg);border:1px solid var(--bor);border-radius:7px;padding:8px 12px;color:var(--txt);font-family:'Space Mono',monospace;font-size:.85rem;outline:none;transition:border .15s;resize:vertical}
+.fl input:focus,.fl textarea:focus,.fl select:focus{border-color:var(--acc)}
+.fl textarea{min-height:130px;line-height:1.9}
+.hint{font-size:.72rem;color:#555;margin-top:4px;line-height:1.6}
+.fbtns{display:flex;gap:8px;margin-top:10px}
+.bsave{padding:8px 20px;background:var(--acc);color:#000;border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'Noto Sans KR',sans-serif}
+.bsave:hover{background:var(--acc2)}
+.bcan{padding:8px 16px;background:transparent;border:1px solid var(--bor);border-radius:7px;cursor:pointer;color:var(--mut);font-size:.82rem;font-family:'Noto Sans KR',sans-serif}
+
+/* genre badge in form */
+.genre-select-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.genre-radio{display:none}
+.genre-label{padding:4px 12px;border-radius:20px;border:1px solid var(--bor);color:var(--mut);cursor:pointer;font-size:.75rem;font-family:'Noto Sans KR',sans-serif;transition:all .15s;user-select:none}
+.genre-radio:checked+.genre-label{color:#000;font-weight:700}
+.genre-radio[value="KPop"]:checked+.genre-label{background:#ff6b9d;border-color:#ff6b9d}
+.genre-radio[value="JPop"]:checked+.genre-label{background:#ff4757;border-color:#ff4757}
+.genre-radio[value="Pop"]:checked+.genre-label{background:#5352ed;border-color:#5352ed;color:#fff}
+.genre-radio[value="기타"]:checked+.genre-label{background:#2ed573;border-color:#2ed573}
+
+/* song items */
+.si{background:var(--sur);border:1px solid var(--bor);border-radius:11px;margin-bottom:8px;overflow:hidden;transition:all .15s}
+.si.favorited{border-color:#c8a840}
+.sih{display:flex;align-items:center;padding:.85rem 1.1rem;cursor:pointer;gap:.75rem}
+.snum{font-family:'Space Mono',monospace;font-size:.72rem;color:#555;min-width:22px}
+.stit{font-size:.95rem;font-weight:500;flex:1}
+.sart{font-size:.78rem;color:var(--mut)}
+.genre-pill{font-size:.65rem;padding:1px 7px;border-radius:10px;font-family:'Noto Sans KR',sans-serif;font-weight:700;margin-left:2px}
+.genre-pill.KPop{background:#ff6b9d22;color:#ff6b9d;border:1px solid #ff6b9d44}
+.genre-pill.JPop{background:#ff475722;color:#ff7875;border:1px solid #ff475744}
+.genre-pill.Pop{background:#5352ed22;color:#8b8fff;border:1px solid #5352ed44}
+.genre-pill.기타{background:#2ed57322;color:#2ed573;border:1px solid #2ed57344}
+.spills{display:flex;gap:4px;flex-wrap:wrap}
+.sp{font-family:'Space Mono',monospace;font-size:.68rem;padding:1px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--bor);color:var(--mut)}
+.sact{display:flex;align-items:center;gap:4px;margin-left:auto}
+.ib{background:transparent;border:none;cursor:pointer;color:#555;font-size:.9rem;padding:4px 7px;border-radius:5px;transition:all .15s;line-height:1}
+.ib:hover{background:var(--sur2);color:var(--txt)}
+.ib.del:hover{color:var(--red)}
+.ib.edit-btn:hover{color:var(--acc)}
+.ib.fav{font-size:1rem}
+.ib.fav.on{color:#e8c050}
+.ib.fav:hover{color:#e8c050}
+.chev{transition:transform .3s;color:#555;font-size:.8rem;line-height:1}
+.si.open .chev{transform:rotate(180deg)}
+.sib{display:none;border-top:1px solid var(--bor)}
+.si.open .sib{display:block}
+
+/* song body */
+.song-toolbar{display:flex;align-items:center;gap:1rem;padding:.75rem 1.1rem;border-bottom:1px solid var(--bor);flex-wrap:wrap}
+.toolbar-label{font-size:.75rem;color:var(--mut)}
+.transpose-ctrl{display:flex;align-items:center;gap:6px}
+.t-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--bor);background:var(--sur2);color:var(--txt);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;font-family:'Space Mono',monospace}
+.t-btn:hover{border-color:var(--acc);color:var(--acc)}
+.t-val{font-family:'Space Mono',monospace;font-size:.82rem;color:var(--acc);min-width:40px;text-align:center}
+.bpm-display{font-family:'Space Mono',monospace;font-size:.82rem;color:var(--grn);background:var(--bg);padding:3px 10px;border-radius:4px;border:1px solid var(--bor)}
+.metronome-btn{padding:3px 10px;border-radius:4px;border:1px solid var(--bor);background:transparent;color:var(--mut);cursor:pointer;font-size:.75rem;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.metronome-btn.running{border-color:var(--grn);color:var(--grn);background:rgba(92,184,122,.1)}
+
+/* lyrics */
+.lyric-sheet{padding:.9rem 1.1rem;font-family:'Space Mono',monospace;font-size:.82rem;line-height:1.5}
+.lyric-para{margin-bottom:1.4rem}
+.lyric-line{display:flex;flex-wrap:wrap;align-items:flex-end;margin-bottom:.1rem}
+.beat-marker{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:bottom}
+.beat-chord{color:var(--acc);font-weight:700;font-size:.78rem;line-height:1;cursor:pointer;white-space:nowrap;min-height:1em;transition:color .15s;display:block;padding-bottom:2px}
+.beat-chord:hover{color:var(--acc2)}
+.beat-chord.empty{min-width:0;pointer-events:none}
+.beat-lyric{color:var(--txt);font-size:.82rem;line-height:1.6;white-space:pre;display:block}
+.lyric-plain{color:var(--txt);font-size:.82rem;line-height:2;white-space:pre-wrap}
+
+/* artist group */
+.genre-section{margin-bottom:2rem}
+.genre-section-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;padding:.5rem .75rem;border-radius:8px;cursor:pointer;user-select:none;transition:background .15s}
+.genre-section-header:hover{background:var(--sur2)}
+.genre-section-title{font-family:'Black Han Sans',sans-serif;font-size:1rem}
+.genre-section-title.KPop{color:#ff6b9d}
+.genre-section-title.JPop{color:#ff7875}
+.genre-section-title.Pop{color:#8b8fff}
+.genre-section-title.기타{color:#2ed573}
+.genre-section-count{font-size:.72rem;color:#555;background:var(--sur2);padding:2px 8px;border-radius:10px}
+.genre-section-chev{color:#555;font-size:.8rem;transition:transform .3s;margin-left:auto}
+.genre-section.collapsed .genre-section-chev{transform:rotate(-90deg)}
+.genre-section-body{display:block}
+.genre-section.collapsed .genre-section-body{display:none}
+
+.artist-group{margin-bottom:1.2rem;padding-left:.5rem}
+.artist-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;padding:.3rem 0;border-bottom:1px solid var(--bor);cursor:pointer;user-select:none}
+.artist-name{font-size:.88rem;font-weight:500;color:var(--acc);font-family:'Space Mono',monospace}
+.artist-count{font-size:.7rem;color:#555;background:var(--sur2);padding:2px 7px;border-radius:10px}
+.artist-chev{color:#555;font-size:.75rem;transition:transform .3s;margin-left:auto}
+.artist-group.collapsed .artist-chev{transform:rotate(-90deg)}
+.artist-songs{display:block}
+.artist-group.collapsed .artist-songs{display:none}
+
+.emp{text-align:center;padding:3rem 2rem;color:#555}
+.emp .big{font-size:2.5rem;margin-bottom:.75rem;opacity:.3}
+.no-results{text-align:center;padding:2rem;color:#555;font-size:.85rem}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closePopup(event)">
+  <div class="popup" id="popup">
+    <button class="popup-close" onclick="closePopup(null)">✕</button>
+    <canvas id="popup-canvas" width="220" height="250" style="display:block;margin:0 auto 1rem"></canvas>
+    <h3 id="popup-name"></h3>
+    <p id="popup-desc"></p>
+    <div class="popup-tags" id="popup-tags"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">한강 악보장 <small>Guitar Chord Book</small></div>
+  <nav>
+    <button class="nb active" onclick="showSec('chords')">코드 사전</button>
+    <button class="nb" onclick="showSec('songs')">내 악보</button>
+  </nav>
+</header>
+
+<main>
+<!-- 코드 사전 -->
+<div id="chords" class="sec active">
+  <div class="stabs">
+    <button class="stab active" onclick="showCTab('open')">오픈 코드</button>
+    <button class="stab" onclick="showCTab('barre')">바레 코드</button>
+    <button class="stab" onclick="showCTab('power')">파워 코드</button>
+  </div>
+  <div id="co-open" class="csub active"><div class="cgrid" id="go"></div></div>
+  <div id="co-barre" class="csub"><div class="cgrid" id="gb"></div></div>
+  <div id="co-power" class="csub"><div class="cgrid" id="gp"></div></div>
+</div>
+
+<!-- 내 악보 -->
+<div id="songs" class="sec">
+  <div class="sh">
+    <h2>내 악보 <span id="scnt" style="font-size:.8rem;color:#555;font-weight:400"></span></h2>
+    <button class="badd" onclick="openForm()">+ 새 악보 추가</button>
+  </div>
+
+  <!-- 장르 탭 -->
+  <div class="genre-tabs">
+    <button class="gtab active" data-genre="all" onclick="setGenre('all',this)">전체</button>
+    <button class="gtab" data-genre="KPop" onclick="setGenre('KPop',this)">🇰🇷 KPop</button>
+    <button class="gtab" data-genre="JPop" onclick="setGenre('JPop',this)">🇯🇵 JPop</button>
+    <button class="gtab" data-genre="Pop" onclick="setGenre('Pop',this)">🌍 Pop</button>
+    <button class="gtab" data-genre="기타" onclick="setGenre('기타',this)">🎸 기타</button>
+  </div>
+
+  <!-- 필터 & 검색 -->
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">전체</button>
+    <button class="filter-btn fav-f" onclick="setFilter('fav',this)">★ 즐겨찾기</button>
+    <button class="filter-btn" onclick="setFilter('artist',this)">가수별</button>
+    <div class="search-wrap">
+      <span class="si-icon">🔍</span>
+      <input id="search" placeholder="곡명 / 아티스트 검색..." oninput="renderSongs()">
+    </div>
+  </div>
+
+  <!-- 추가/수정 폼 -->
+  <div class="aform" id="af">
+    <div class="form-title">
+      <span id="form-title-text">새 악보 추가</span>
+      <span class="form-mode-badge" id="form-mode-badge">추가</span>
+    </div>
+    <div class="fg">
+      <div class="fl"><label>곡 제목</label><input id="ft" placeholder="예: Wonderful Tonight"></div>
+      <div class="fl"><label>아티스트</label><input id="fa" placeholder="예: Eric Clapton"></div>
+      <div class="fl ff">
+        <label>장르</label>
+        <div class="genre-select-row">
+          <input type="radio" name="fgenre" id="fg-kpop" class="genre-radio" value="KPop">
+          <label for="fg-kpop" class="genre-label">🇰🇷 KPop</label>
+          <input type="radio" name="fgenre" id="fg-jpop" class="genre-radio" value="JPop">
+          <label for="fg-jpop" class="genre-label">🇯🇵 JPop</label>
+          <input type="radio" name="fgenre" id="fg-pop" class="genre-radio" value="Pop">
+          <label for="fg-pop" class="genre-label">🌍 Pop</label>
+          <input type="radio" name="fgenre" id="fg-etc" class="genre-radio" value="기타" checked>
+          <label for="fg-etc" class="genre-label">🎸 기타</label>
+        </div>
+      </div>
+      <div class="fl"><label>사용 코드 (쉼표 구분)</label><input id="fc" placeholder="예: G, D, Em, C"></div>
+      <div class="fl"><label>키 (Key)</label><input id="fk" placeholder="예: G"></div>
+      <div class="fl"><label>박자</label>
+        <select id="fts">
+          <option value="">선택 안함</option>
+          <option value="4/4">4/4 박자</option>
+          <option value="3/4">3/4 박자</option>
+          <option value="6/8">6/8 박자</option>
+          <option value="2/4">2/4 박자</option>
+          <option value="12/8">12/8 박자</option>
+        </select>
+      </div>
+      <div class="fl"><label>BPM</label><input id="fbpm" type="number" min="40" max="240" placeholder="예: 120"></div>
+      <div class="fl ff">
+        <label>가사 + 코드</label>
+        <textarea id="fly" placeholder="[G]Wonderful tonight, [D]it's late in the [Em]evening...&#10;[C]she's wondering what clothes to [D]wear.&#10;&#10;• 코드는 [G], [Am] 형식으로 가사 바로 앞에 붙이세요&#10;• 일본어: [G]君の名前を 아래줄에 한국발음 같이 써도 돼요&#10;• 빈 줄로 절(verse)을 구분하세요"></textarea>
+        <p class="hint">💡 [코드명]가사 형식 → 코드가 가사 위에 자동 배치. 코드 클릭 시 다이어그램!</p>
+      </div>
+    </div>
+    <div class="fbtns">
+      <button class="bsave" id="fsave-btn" onclick="saveSong()">저장</button>
+      <button class="bcan" onclick="closeForm()">취소</button>
+    </div>
+  </div>
+
+  <div id="sl"></div>
+</div>
+</main>
+
+<script>
+// ── roundRect 폴리필 ──────────────────────────────────────
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);
+    this.moveTo(x+r,y);this.lineTo(x+w-r,y);
+    this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    this.lineTo(x+r,y+h);this.quadraticCurveTo(x,y+h,x,y+h-r);
+    this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);
+    this.closePath();return this;
+  };
+}
+
+// ── 코드 데이터 ──────────────────────────────────────────
+const CHORDS_ALL={
+  open:[
+    {name:'C',fingers:[{s:1,f:1,n:1},{s:2,f:2,n:2},{s:3,f:3,n:3}],open:[0,3,5],mute:[5],startFret:1,nf:4,desc:'가장 기본적인 코드. 밝고 따뜻한 울림.',tags:['Major','초급']},
+    {name:'Am',fingers:[{s:1,f:1,n:1},{s:2,f:2,n:2},{s:3,f:2,n:3}],open:[0,1,4,5],mute:[5],startFret:1,nf:4,desc:'A 마이너. 부드럽고 약간 슬픈 느낌.',tags:['Minor','초급']},
+    {name:'G',fingers:[{s:0,f:3,n:2},{s:1,f:2,n:1},{s:5,f:3,n:3}],open:[2,3,4],mute:[],startFret:1,nf:4,desc:'G 메이저. 개방현이 많아 울림이 풍성.',tags:['Major','초급']},
+    {name:'Em',fingers:[{s:1,f:2,n:2},{s:2,f:2,n:3}],open:[0,1,3,4,5],mute:[],startFret:1,nf:4,desc:'E 마이너. 단 두 손가락. 가장 쉬운 코드.',tags:['Minor','초급']},
+    {name:'D',fingers:[{s:1,f:3,n:3},{s:2,f:2,n:1},{s:3,f:3,n:2}],open:[3],mute:[4,5],startFret:1,nf:4,desc:'D 메이저. 4·5·6번 줄만 연주.',tags:['Major','초급']},
+    {name:'E',fingers:[{s:2,f:1,n:1},{s:3,f:2,n:3},{s:4,f:2,n:2}],open:[0,1,5],mute:[],startFret:1,nf:4,desc:'E 메이저.',tags:['Major','초급']},
+    {name:'Dm',fingers:[{s:1,f:1,n:1},{s:2,f:2,n:2},{s:3,f:3,n:3}],open:[3],mute:[4,5],startFret:1,nf:4,desc:'D 마이너. 슬프고 진지한 분위기.',tags:['Minor','초급']},
+    {name:'A',fingers:[{s:1,f:2,n:1},{s:2,f:2,n:2},{s:3,f:2,n:3}],open:[0,4],mute:[5],startFret:1,nf:4,desc:'A 메이저.',tags:['Major','초급']},
+    {name:'F',fingers:[{s:3,f:2,n:2},{s:4,f:3,n:3},{s:5,f:3,n:4}],open:[],mute:[],barreFret:1,barreFrom:0,startFret:1,nf:4,desc:'1프렛 바레 코드. 초보자 관문!',tags:['Major','바레','중급']},
+    {name:'Cadd9',fingers:[{s:1,f:3,n:2},{s:2,f:2,n:1},{s:5,f:3,n:3}],open:[0,3],mute:[4],startFret:1,nf:4,desc:'C에 9음 추가. 팝스러운 느낌.',tags:['Add9','중급']},
+  ],
+  barre:[
+    {name:'Bm',fingers:[{s:3,f:4,n:2},{s:4,f:4,n:3},{s:5,f:3,n:4}],open:[],mute:[5],barreFret:2,barreFrom:0,startFret:2,nf:4,desc:'2프렛 바레 마이너. 록 발라드 필수.',tags:['Minor','바레','중급']},
+    {name:'B7',fingers:[{s:1,f:2,n:1},{s:2,f:1,n:2},{s:3,f:2,n:3},{s:5,f:2,n:4}],open:[0,3],mute:[4],startFret:1,nf:4,desc:'도미넌트 7th. 블루스 분위기.',tags:['7th','중급']},
+    {name:'G/B',fingers:[{s:1,f:2,n:1},{s:5,f:3,n:3}],open:[0,2,3],mute:[4],startFret:1,nf:4,desc:'G 코드의 B 베이스. 부드러운 연결.',tags:['Slash','중급']},
+    {name:'Fm',fingers:[{s:3,f:3,n:3},{s:4,f:3,n:4}],open:[],mute:[],barreFret:1,barreFrom:0,startFret:1,nf:4,desc:'1프렛 풀 바레 마이너.',tags:['Minor','바레','고급']},
+  ],
+  power:[
+    {name:'E5',fingers:[{s:1,f:2,n:1},{s:2,f:2,n:2}],open:[0],mute:[3,4,5],startFret:1,nf:4,desc:'E 파워코드.',tags:['Power','Rock','초급']},
+    {name:'A5',fingers:[{s:2,f:2,n:1},{s:3,f:2,n:2}],open:[1],mute:[0,4,5],startFret:1,nf:4,desc:'A 파워코드.',tags:['Power','Rock','초급']},
+    {name:'G5',fingers:[{s:4,f:5,n:2},{s:5,f:3,n:1}],open:[],mute:[0,1,2,3],startFret:3,nf:4,desc:'G 파워코드.',tags:['Power','Rock','초급']},
+    {name:'D5',fingers:[{s:2,f:3,n:2},{s:3,f:2,n:1}],open:[],mute:[0,1,4,5],startFret:1,nf:4,desc:'D 파워코드.',tags:['Power','Rock','초급']},
+  ]
+};
+const CHORD_MAP={};
+[...CHORDS_ALL.open,...CHORDS_ALL.barre,...CHORDS_ALL.power].forEach(c=>CHORD_MAP[c.name]=c);
+
+// ── 조옮김 ──────────────────────────────────────────────
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const ENHARMONIC={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+function transposeNote(note,st){
+  const c=ENHARMONIC[note]||note;
+  const i=NOTES.indexOf(c);
+  if(i===-1)return note;
+  return NOTES[(i+st+12*10)%12];
+}
+function transposeLine(line,st){
+  if(st===0)return line;
+  return line.replace(/\[([^\]]+)\]/g,(m,chord)=>{
+    const match=chord.match(/^([A-G][b#]?)(.*)/);
+    if(!match)return m;
+    let root=match[1],suf=match[2];
+    const slash=suf.match(/^(.*?)\/([A-G][b#]?)$/);
+    if(slash)return`[${transposeNote(root,st)}${slash[1]}/${transposeNote(slash[2],st)}]`;
+    return`[${transposeNote(root,st)}${suf}]`;
+  });
+}
+
+// ── Canvas 프렛보드 ──────────────────────────────────────
+function drawChord(canvas,chord,W,H){
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  canvas.width=W;canvas.height=H;
+  const PL=30,PR=14,PT=34,PB=22;
+  const NF=chord.nf||4,NS=6;
+  const bw=W-PL-PR,bh=H-PT-PB;
+  const sw=bw/(NS-1),fh=bh/NF;
+  const sf=chord.startFret||1;
+  ctx.fillStyle='#1a1a1c';
+  ctx.beginPath();ctx.roundRect(0,0,W,H,8);ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.roundRect(PL-4,PT-2,bw+8,bh+4,3);ctx.fill();
+  if(sf===1){ctx.fillStyle='#ddd';ctx.fillRect(PL-4,PT-5,bw+8,5);}
+  for(let f=0;f<=NF;f++){
+    const y=PT+f*fh;
+    ctx.strokeStyle=f===0&&sf===1?'transparent':'rgba(255,255,255,0.35)';
+    ctx.lineWidth=f===0?0:1;
+    ctx.beginPath();ctx.moveTo(PL-1,y);ctx.lineTo(PL+bw+1,y);ctx.stroke();
+  }
+  for(let s=0;s<NS;s++){
+    const x=PL+s*sw;
+    const thick=s<1?1:s<2?1.2:s<4?1.5:s<5?2:2.5;
+    ctx.strokeStyle=`rgba(255,255,255,${0.55+s*0.05})`;
+    ctx.lineWidth=thick;
+    ctx.beginPath();ctx.moveTo(x,PT);ctx.lineTo(x,PT+bh);ctx.stroke();
+  }
+  if(sf>1){ctx.fillStyle='#777';ctx.font='bold 10px monospace';ctx.textAlign='right';ctx.fillText(sf+'fr',PL-8,PT+fh*.55+4);}
+  const snames=['e','B','G','D','A','E'];
+  ctx.fillStyle='#666';ctx.font='9px monospace';ctx.textAlign='center';
+  for(let s=0;s<NS;s++)ctx.fillText(snames[s],PL+s*sw,H-5);
+  ctx.fillStyle='#d4a843';ctx.font='bold 15px monospace';ctx.textAlign='center';
+  ctx.fillText(chord.name,W/2,19);
+  if(chord.barreFret!=null){
+    const adjF=chord.barreFret-sf+1;
+    const by=PT+adjF*fh-fh/2;
+    const bxS=PL+(chord.barreFrom||0)*sw,bxE=PL+(NS-1)*sw;
+    ctx.fillStyle='rgba(180,140,80,0.85)';
+    ctx.beginPath();ctx.roundRect(bxS-5,by-9,bxE-bxS+10,18,9);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='center';
+    ctx.fillText('1',bxS,by+4);
+  }
+  for(let s=0;s<NS;s++){
+    const x=PL+s*sw;
+    const isMute=chord.mute?.includes(s);
+    const isOpen=chord.open?.includes(s);
+    if(isMute){ctx.fillStyle='#e8605c';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText('×',x,PT-7);}
+    else if(isOpen){ctx.strokeStyle='#aaa';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,PT-9,4.5,0,Math.PI*2);ctx.stroke();}
+  }
+  chord.fingers.forEach(fi=>{
+    if(fi.barre)return;
+    const x=PL+fi.s*sw;
+    const adjF=fi.f-sf+1;
+    const y=PT+adjF*fh-fh/2;
+    ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=5;ctx.shadowOffsetY=2;
+    ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fillStyle='#d4a843';ctx.fill();
+    ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='center';
+    ctx.fillText(fi.n,x,y+4);
+  });
+}
+
+function buildGrid(id,list){
+  const cont=document.getElementById(id);cont.innerHTML='';
+  list.forEach(ch=>{
+    const card=document.createElement('div');card.className='ccard';
+    const cn=document.createElement('div');cn.className='cn';cn.textContent=ch.name;
+    const ct=document.createElement('div');ct.className='ct';ct.textContent=ch.tags.join(' · ');
+    const cv=document.createElement('canvas');cv.style.display='block';cv.style.margin='0 auto';
+    card.append(cn,ct,cv);drawChord(cv,ch,160,190);
+    card.onclick=()=>openPopup(ch);cont.appendChild(card);
+  });
+}
+buildGrid('go',CHORDS_ALL.open);
+buildGrid('gb',CHORDS_ALL.barre);
+buildGrid('gp',CHORDS_ALL.power);
+
+function showCTab(t){
+  document.querySelectorAll('.stab').forEach((b,i)=>b.classList.toggle('active',['open','barre','power'][i]===t));
+  document.querySelectorAll('.csub').forEach(s=>s.classList.remove('active'));
+  document.getElementById('co-'+t).classList.add('active');
+}
+
+// ── 코드 팝업 ─────────────────────────────────────────────
+function openPopup(ch){
+  drawChord(document.getElementById('popup-canvas'),ch,220,250);
+  document.getElementById('popup-name').textContent=ch.name;
+  document.getElementById('popup-desc').textContent=ch.desc;
+  const tc={Major:'major',Minor:'minor',Power:'power','바레':'barre'};
+  document.getElementById('popup-tags').innerHTML=ch.tags.map(t=>`<span class="ptag ${tc[t]||''}">${t}</span>`).join('');
+  document.getElementById('overlay').classList.add('show');
+}
+function closePopup(e){
+  if(e&&e.target!==document.getElementById('overlay'))return;
+  document.getElementById('overlay').classList.remove('show');
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.getElementById('overlay').classList.remove('show');
+    closeForm();
+  }
+});
+
+// ── 메트로놈 ─────────────────────────────────────────────
+let metroCtx=null,metroInterval=null,metroBeat=0,metroBeats=4;
+function toggleMetro(btn,bpm,timeSig){
+  if(metroInterval){
+    clearInterval(metroInterval);metroInterval=null;
+    btn.textContent='▶ 메트로놈';btn.classList.remove('running');
+    if(metroCtx){metroCtx.close();metroCtx=null;}
+    return;
+  }
+  metroBeats=parseInt((timeSig||'4/4').split('/')[0])||4;
+  metroBeat=0;
+  metroCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const tick=()=>{
+    const osc=metroCtx.createOscillator(),gain=metroCtx.createGain();
+    osc.connect(gain);gain.connect(metroCtx.destination);
+    osc.frequency.value=metroBeat===0?1200:800;
+    gain.gain.setValueAtTime(.3,metroCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,metroCtx.currentTime+.08);
+    osc.start();osc.stop(metroCtx.currentTime+.1);
+    metroBeat=(metroBeat+1)%metroBeats;
+  };
+  tick();
+  metroInterval=setInterval(tick,60000/bpm);
+  btn.textContent='⏹ 정지';btn.classList.add('running');
+}
+
+// ── 곡 데이터 ─────────────────────────────────────────────
+let songs;
+try{
+  songs=JSON.parse(localStorage.getItem('hangangSongs')||'null')||[
+    {id:1,title:'Wonderful Tonight',artist:'Eric Clapton',genre:'Pop',chords:['G','D','Em','C'],key:'G',timeSig:'4/4',bpm:92,fav:false,
+     lyrics:`[G]It's late in the [D]evening,\n[C]she's wondering what clothes to [D]wear.\n[G]She puts on her make-up and\n[D]brushes her long blonde [C]hair.\nAnd then she [D]asks me,\n[G]"Do I look alright?" [D]\nAnd I say, [C]"Yes, you look [D]wonderful to[G]night."`}
+  ];
+}catch(e){
+  songs=[
+    {id:1,title:'Wonderful Tonight',artist:'Eric Clapton',genre:'Pop',chords:['G','D','Em','C'],key:'G',timeSig:'4/4',bpm:92,fav:false,
+     lyrics:`[G]It's late in the [D]evening,\n[C]she's wondering what clothes to [D]wear.\n[G]She puts on her make-up and\n[D]brushes her long blonde [C]hair.\nAnd then she [D]asks me,\n[G]"Do I look alright?" [D]\nAnd I say, [C]"Yes, you look [D]wonderful to[G]night."`}
+  ];
+}
+let transposeState={},openState={},filterMode='all',genreFilter='all';
+let editingId=null; // null=추가모드, id=수정모드
+let collapsedGenres={},collapsedArtists={};
+
+function sv(){try{localStorage.setItem('hangangSongs',JSON.stringify(songs))}catch(e){}}
+
+// ── 장르 / 필터 ──────────────────────────────────────────
+function setGenre(g,btn){
+  genreFilter=g;
+  document.querySelectorAll('.gtab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSongs();
+}
+function setFilter(mode,btn){
+  filterMode=mode;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSongs();
+}
+
+// ── 폼 열기/닫기 ─────────────────────────────────────────
+function openForm(id){
+  editingId = id||null;
+  const f=document.getElementById('af');
+  const badge=document.getElementById('form-mode-badge');
+  const title=document.getElementById('form-title-text');
+  const saveBtn=document.getElementById('fsave-btn');
+
+  if(id){
+    // 수정 모드: 기존 데이터 채우기
+    const s=songs.find(x=>x.id===id);
+    if(!s)return;
+    document.getElementById('ft').value=s.title||'';
+    document.getElementById('fa').value=s.artist||'';
+    document.getElementById('fc').value=(s.chords||[]).join(', ');
+    document.getElementById('fk').value=s.key||'';
+    document.getElementById('fts').value=s.timeSig||'';
+    document.getElementById('fbpm').value=s.bpm||'';
+    document.getElementById('fly').value=s.lyrics||'';
+    // 장르 라디오
+    const gv=s.genre||'기타';
+    const radio=document.querySelector(`input[name="fgenre"][value="${gv}"]`);
+    if(radio)radio.checked=true;
+    title.textContent='악보 수정';
+    badge.textContent='수정 중';
+    badge.className='form-mode-badge edit';
+    saveBtn.textContent='수정 저장';
+  } else {
+    // 추가 모드: 초기화
+    ['ft','fa','fc','fk','fbpm','fly'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('fts').value='';
+    document.querySelector('input[name="fgenre"][value="기타"]').checked=true;
+    title.textContent='새 악보 추가';
+    badge.textContent='추가';
+    badge.className='form-mode-badge';
+    saveBtn.textContent='저장';
+  }
+
+  f.classList.add('open');
+  f.scrollIntoView({behavior:'smooth',block:'nearest'});
+  setTimeout(()=>document.getElementById('ft').focus(),200);
+}
+function closeForm(){
+  document.getElementById('af').classList.remove('open');
+  editingId=null;
+}
+
+function saveSong(){
+  const t=document.getElementById('ft').value.trim();
+  if(!t){alert('곡 제목을 입력해주세요.');return}
+  const ch=(document.getElementById('fc').value||'').split(',').map(c=>c.trim()).filter(Boolean);
+  const gv=(document.querySelector('input[name="fgenre"]:checked')?.value)||'기타';
+
+  if(editingId!==null){
+    // 수정
+    const idx=songs.findIndex(s=>s.id===editingId);
+    if(idx!==-1){
+      songs[idx]={
+        ...songs[idx],
+        title:t,
+        artist:document.getElementById('fa').value.trim()||'알 수 없음',
+        genre:gv,
+        chords:ch,
+        key:document.getElementById('fk').value.trim(),
+        timeSig:document.getElementById('fts').value,
+        bpm:parseInt(document.getElementById('fbpm').value)||null,
+        lyrics:document.getElementById('fly').value.trim()
+      };
+    }
+  } else {
+    // 추가
+    songs.unshift({
+      id:Date.now(),
+      title:t,
+      artist:document.getElementById('fa').value.trim()||'알 수 없음',
+      genre:gv,
+      chords:ch,
+      key:document.getElementById('fk').value.trim(),
+      timeSig:document.getElementById('fts').value,
+      bpm:parseInt(document.getElementById('fbpm').value)||null,
+      fav:false,
+      lyrics:document.getElementById('fly').value.trim()
+    });
+  }
+  sv();closeForm();renderSongs();
+}
+
+// ── 가사 렌더링 ──────────────────────────────────────────
+function renderLyrics(raw,st){
+  const transposed=transposeLine(raw,st);
+  return transposed.split(/\n\n+/).map(para=>{
+    const lineHtmls=para.split('\n').map(line=>{
+      if(!/\[/.test(line))
+        return`<div class="lyric-line"><span class="beat-lyric">${escHtml(line)||'&nbsp;'}</span></div>`;
+      const tokens=[];
+      const firstChord=line.search(/\[/);
+      if(firstChord>0)tokens.push({chord:'',lyric:line.slice(0,firstChord)});
+      const re=/\[([^\]]+)\]([^\[]*)/g;let m;
+      while((m=re.exec(line))!==null)tokens.push({chord:m[1],lyric:m[2]});
+      const beats=tokens.map(tok=>{
+        const chord=tok.chord,lyric=tok.lyric;
+        const root=chord.match(/^([A-G][b#]?)/)?.[1];
+        const clickable=chord?(CHORD_MAP[chord]||CHORD_MAP[root]):null;
+        const chordHtml=chord
+          ?`<span class="beat-chord"${clickable?` onclick="openPopup(CHORD_MAP['${escAttr(chord)}']||CHORD_MAP['${escAttr(root)||''}'])"`:''}>${escHtml(chord)}</span>`
+          :`<span class="beat-chord empty"></span>`;
+        return`<span class="beat-marker">${chordHtml}<span class="beat-lyric">${escHtml(lyric)||''}</span></span>`;
+      }).join('');
+      return`<div class="lyric-line">${beats}</div>`;
+    }).join('');
+    return`<div class="lyric-para">${lineHtmls}</div>`;
+  }).join('');
+}
+function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escAttr(s){return(s||'').replace(/'/g,"\\'")}
+
+// ── 노래 아이템 빌드 ─────────────────────────────────────
+function buildSongEl(s,i){
+  const st=transposeState[s.id]||0;
+  const div=document.createElement('div');
+  div.className='si'+(s.fav?' favorited':'');
+  div.id='si'+s.id;
+  div.classList.toggle('open',!!openState[s.id]);
+  const pills=(s.chords||[]).map(c=>`<span class="sp">${transposeNote(c,st)}</span>`).join('');
+  const keyDisp=s.key?transposeNote(s.key,st):'';
+  const bpmVal=s.bpm?parseInt(s.bpm):120;
+  const genre=s.genre||'기타';
+  div.innerHTML=`
+    <div class="sih" onclick="togS(${s.id})">
+      <span class="snum">${String(i+1).padStart(2,'0')}</span>
+      <div style="flex:1;min-width:0">
+        <div class="stit">${escHtml(s.title)}</div>
+        <div style="display:flex;gap:.5rem;align-items:center;margin-top:3px;flex-wrap:wrap">
+          <span class="sart">${escHtml(s.artist)}</span>
+          <span class="genre-pill ${genre}">${genre}</span>
+          <div class="spills">${pills}</div>
+        </div>
+      </div>
+      <div class="sact">
+        <button class="ib fav ${s.fav?'on':''}" onclick="event.stopPropagation();togFav(${s.id})" title="즐겨찾기">${s.fav?'★':'☆'}</button>
+        <button class="ib edit-btn" onclick="event.stopPropagation();openForm(${s.id})" title="수정">✏️</button>
+        <button class="ib del" onclick="event.stopPropagation();delS(${s.id})" title="삭제">✕</button>
+        <span class="chev">▾</span>
+      </div>
+    </div>
+    <div class="sib">
+      <div class="song-toolbar">
+        <span class="toolbar-label">조옮김</span>
+        <div class="transpose-ctrl">
+          <button class="t-btn" onclick="changeTranspose(${s.id},-1)">−</button>
+          <span class="t-val" id="tv-${s.id}">${st===0?'원조':(st>0?'+'+st:st)}</span>
+          <button class="t-btn" onclick="changeTranspose(${s.id},+1)">+</button>
+          <button class="t-btn" style="border-radius:4px;width:auto;padding:0 8px;font-size:.7rem" onclick="resetTranspose(${s.id})">리셋</button>
+        </div>
+        ${keyDisp?`<span class="toolbar-label" style="margin-left:.5rem">Key: <span style="color:var(--acc);font-family:monospace">${keyDisp}</span></span>`:''}
+        ${s.timeSig?`<span class="bpm-display">${s.timeSig}</span>`:''}
+        ${s.bpm?`<span class="bpm-display">${s.bpm} BPM</span>`:''}
+        ${s.bpm?`<button class="metronome-btn" id="mb-${s.id}" onclick="toggleMetro(this,${bpmVal},'${s.timeSig||'4/4'}')">▶ 메트로놈</button>`:''}
+      </div>
+      ${s.lyrics?`<div class="lyric-sheet">${renderLyrics(s.lyrics,st)}</div>`:'<p style="padding:.9rem 1.1rem;color:#555;font-size:.82rem">가사가 없어요.</p>'}
+    </div>`;
+  return div;
+}
+
+// ── 렌더 ─────────────────────────────────────────────────
+const GENRE_ORDER=['KPop','JPop','Pop','기타'];
+const GENRE_LABELS={KPop:'🇰🇷 KPop',JPop:'🇯🇵 JPop',Pop:'🌍 Pop','기타':'🎸 기타'};
+
+function renderSongs(){
+  const sl=document.getElementById('sl');
+  const q=(document.getElementById('search')?.value||'').toLowerCase();
+
+  let list=songs.filter(s=>{
+    if(filterMode==='fav'&&!s.fav)return false;
+    if(genreFilter!=='all'&&(s.genre||'기타')!==genreFilter)return false;
+    if(q&&!s.title.toLowerCase().includes(q)&&!s.artist.toLowerCase().includes(q))return false;
+    return true;
+  });
+
+  document.getElementById('scnt').textContent=songs.length?songs.length+'곡':'';
+  if(!songs.length){sl.innerHTML='<div class="emp"><div class="big">🎵</div><p>아직 등록된 악보가 없어요.</p></div>';return}
+  if(!list.length){sl.innerHTML='<div class="no-results">검색 결과가 없어요.</div>';return}
+
+  sl.innerHTML='';
+
+  // 가수별 보기
+  if(filterMode==='artist'){
+    const grouped={};
+    list.forEach(s=>{const a=s.artist||'알 수 없음';if(!grouped[a])grouped[a]=[];grouped[a].push(s);});
+    Object.keys(grouped).sort().forEach(artist=>{
+      const enc=encodeURIComponent(artist);
+      const grp=document.createElement('div');
+      grp.className='artist-group'+(collapsedArtists[enc]?' collapsed':'');
+      grp.id='ag-'+enc;
+      grp.innerHTML=`
+        <div class="artist-header" onclick="togArtist('${enc}')">
+          <span class="artist-name">${escHtml(artist)}</span>
+          <span class="artist-count">${grouped[artist].length}곡</span>
+          <span class="artist-chev">▾</span>
+        </div>
+        <div class="artist-songs" id="as-${enc}"></div>`;
+      sl.appendChild(grp);
+      const cont=grp.querySelector('.artist-songs');
+      grouped[artist].forEach((s,i)=>cont.appendChild(buildSongEl(s,i)));
+    });
+    return;
+  }
+
+  // 장르별 섹션 보기 (전체/즐겨찾기 모드)
+  // 현재 표시할 장르 목록 결정
+  let genresToShow = genreFilter==='all'
+    ? GENRE_ORDER.filter(g=>list.some(s=>(s.genre||'기타')===g))
+    : [genreFilter];
+
+  genresToShow.forEach(genre=>{
+    const gList=list.filter(s=>(s.genre||'기타')===genre);
+    if(!gList.length)return;
+
+    const sec=document.createElement('div');
+    sec.className='genre-section'+(collapsedGenres[genre]?' collapsed':'');
+    sec.id='gs-'+genre;
+
+    const header=document.createElement('div');
+    header.className='genre-section-header';
+    header.onclick=()=>togGenreSection(genre);
+    header.innerHTML=`
+      <span class="genre-section-title ${genre}">${GENRE_LABELS[genre]}</span>
+      <span class="genre-section-count">${gList.length}곡</span>
+      <span class="genre-section-chev">▾</span>`;
+    sec.appendChild(header);
+
+    const body=document.createElement('div');
+    body.className='genre-section-body';
+
+    // 각 장르 안에서 아티스트별 그룹
+    const grouped={};
+    gList.forEach(s=>{const a=s.artist||'알 수 없음';if(!grouped[a])grouped[a]=[];grouped[a].push(s);});
+    Object.keys(grouped).sort().forEach(artist=>{
+      const enc=encodeURIComponent(genre+'_'+artist);
+      const agrp=document.createElement('div');
+      agrp.className='artist-group'+(collapsedArtists[enc]?' collapsed':'');
+      agrp.id='ag-'+enc;
+      agrp.innerHTML=`
+        <div class="artist-header" onclick="togArtist('${enc}')">
+          <span class="artist-name">${escHtml(artist)}</span>
+          <span class="artist-count">${grouped[artist].length}곡</span>
+          <span class="artist-chev">▾</span>
+        </div>
+        <div class="artist-songs" id="as-${enc}"></div>`;
+      body.appendChild(agrp);
+      const cont=agrp.querySelector('.artist-songs');
+      grouped[artist].forEach((s,i)=>cont.appendChild(buildSongEl(s,i)));
+    });
+
+    sec.appendChild(body);
+    sl.appendChild(sec);
+  });
+}
+
+function togGenreSection(genre){
+  collapsedGenres[genre]=!collapsedGenres[genre];
+  document.getElementById('gs-'+genre)?.classList.toggle('collapsed',collapsedGenres[genre]);
+}
+function togArtist(enc){
+  collapsedArtists[enc]=!collapsedArtists[enc];
+  document.getElementById('ag-'+enc)?.classList.toggle('collapsed',collapsedArtists[enc]);
+}
+function togS(id){
+  openState[id]=!openState[id];
+  document.getElementById('si'+id)?.classList.toggle('open',openState[id]);
+}
+function togFav(id){
+  const s=songs.find(x=>x.id===id);
+  if(s){s.fav=!s.fav;sv();renderSongs();}
+}
+function delS(id){
+  if(!confirm('이 악보를 삭제할까요?'))return;
+  songs=songs.filter(s=>s.id!==id);
+  delete transposeState[id];
+  sv();renderSongs();
+}
+function changeTranspose(id,delta){
+  transposeState[id]=((transposeState[id]||0)+delta+12)%12;
+  if(transposeState[id]>6)transposeState[id]-=12;
+  renderSongs();
+}
+function resetTranspose(id){transposeState[id]=0;renderSongs();}
+
+function showSec(id){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nb').forEach((b,i)=>b.classList.toggle('active',['chords','songs'][i]===id));
+}
+
+renderSongs();
+</script>
+</body>
+</html>
